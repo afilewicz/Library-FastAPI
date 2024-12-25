@@ -1,0 +1,83 @@
+name: library
+services:
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      sql-db:
+        condition: service_healthy
+        restart: true
+        required: true
+    environment:
+      BACKEND_CORS_ORIGINS: http://localhost,http://localhost:5173,https://localhost,https://localhost:5173
+      DOCKER_IMAGE_BACKEND: backend-api
+      DOCKER_IMAGE_DATA_RETRIEVAL: data-retrieval
+      DOMAIN: localhost
+      FRONTEND_HOST: http://localhost:5173
+      POSTGRES_DB: app
+      POSTGRES_HOST: localhost
+      POSTGRES_PASSWORD: postgresqlpassword
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      PROJECT_NAME: WawaBus
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8000/backend/v1/utils/health-check/
+      timeout: 5s
+      interval: 10s
+      retries: 5
+    image: backend-api:latest
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8000
+        published: "8000"
+        protocol: tcp
+    restart: "no"
+  sql-db:
+    environment:
+      BACKEND_CORS_ORIGINS: http://localhost,http://localhost:5173,https://localhost,https://localhost:5173
+      DOCKER_IMAGE_BACKEND: backend-api
+      DOCKER_IMAGE_DATA_RETRIEVAL: data-retrieval
+      DOMAIN: localhost
+      FRONTEND_HOST: http://localhost:5173
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: app
+      POSTGRES_HOST: localhost
+      POSTGRES_PASSWORD: postgresqlpassword
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      PROJECT_NAME: WawaBus
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U postgres -d app
+      timeout: 10s
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    image: postgres:12
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5432"
+        protocol: tcp
+    restart: "no"
+    volumes:
+      - type: volume
+        source: app-db-data
+        target: /var/lib/postgresql/data/pgdata
+        volume: {}
+networks:
+  default:
+    name: pis-24z_default
+volumes:
+  app-db-data:
+    name: pis-24z_app-db-data

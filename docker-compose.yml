@@ -1,0 +1,48 @@
+services:
+
+  sql-db:
+    image: postgres:12
+    restart: "no"
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+    ports:
+      - "5432:5432"
+
+  backend-api:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: "no"
+    networks:
+      - default
+    depends_on:
+      - sql-db
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    build:
+      context: ./backend
+
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: "no"
+    networks:
+      - default
+    depends_on:
+      - backend-api
+
+
+volumes:
+  app-db-data:
+  app-nosql-db-data:
