@@ -1,0 +1,16 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = "System zarządzania biblioteką"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]<1.0.0,>=0.114.2",   # Podstawowy framework FastAPI
+    "sqlmodel<1.0.0,>=0.0.21",             # Do zarządzania modelem bazy danych
+    "psycopg2-binary<3.0.0,>=2.9.1",       # Sterownik PostgreSQL
+    "pydantic>2.0",                        # Walidacja danych i modele
+    "pydantic-settings<3.0.0,>=2.2.1",     # Ustawienia aplikacji
+    "python-multipart<1.0.0,>=0.0.7",      # Obsługa przesyłania plików (opcjonalnie, np. dla avatarów użytkowników)
+    "passlib[bcrypt]<2.0.0,>=1.7.4",       # Do hashowania haseł
+    "pyjwt<3.0.0,>=2.8.0",                 # Obsługa JWT do logowania użytkowników
+]
