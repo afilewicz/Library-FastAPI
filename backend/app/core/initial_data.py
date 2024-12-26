@@ -4,7 +4,6 @@ from app.models import Loan
 from datetime import date
 
 def load_initial_data(session: Session):
-    # Sprawdź, czy w bazie istnieją już książki
     existing_books = session.query(Book).first()
     if existing_books:
         print("Dane początkowe są już załadowane.")
@@ -12,7 +11,6 @@ def load_initial_data(session: Session):
 
     print("Ładowanie danych początkowych...")
 
-    # Dodaj przykładowe książki
     books = [
         Book(title="Pan Tadeusz", author="Adam Mickiewicz", publisher="Ossolineum",
              date_of_publication=date(1834, 6, 28), price=59.99),

@@ -18,7 +18,7 @@ class Book(SQLModel, table=True):
     loans: List["Loan"] = Relationship(back_populates="book")
 
 class LoanStatus(str, Enum):
-    Free = "Free"
+    Returned = "Returned"
     Reserved = "Reserved"
     Loaned = "Loaned"
 
@@ -28,6 +28,6 @@ class Loan(SQLModel, table=True):
     user_id: int
     loan_date: Optional[datetime.date] = None
     return_date: Optional[datetime.date] = None
-    status: LoanStatus
+    status: LoanStatus = "Reserved"
 
     book: "Book" = Relationship(back_populates="loans")
