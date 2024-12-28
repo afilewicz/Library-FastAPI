@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from app.models import Book, Loan, LoanStatus
+from app.models import Book, Loan, LoanStatus, User
 
 def create_book(session: Session, book: Book) -> Book:
     session.add(book)
@@ -96,3 +96,14 @@ def add_loan_to_history(session: Session, book_id: int, loan_id: int) -> Book:
     session.commit()
     session.refresh(db_book)
     return db_book
+
+def get_user_by_username(session: Session, username: str) -> User:
+    statement = select(User).where(User.username == username)
+    return session.exec(statement).first()
+
+def create_user(session: Session, username: str, hashed_password: str) -> User:
+    user = User(username=username, hashed_password=hashed_password)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user

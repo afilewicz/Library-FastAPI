@@ -1,7 +1,12 @@
 from sqlmodel import Session
 from app.models import Book
 from app.models import Loan
+from app.models import User
 from datetime import date
+from app.core.config import settings
+
+from app.core.security import get_password_hash
+
 
 def load_initial_data(session: Session):
     existing_books = session.query(Book).first()
@@ -22,6 +27,19 @@ def load_initial_data(session: Session):
              date_of_publication=date(1937, 8, 15), price=44.99),
     ]
     session.add_all(books)
-    session.commit()
 
+    # Dodaj użytkownika
+    existing_user = session.query(User).first()
+    print("existing_user: ", existing_user)
+    if not existing_user:
+        hashed_password = get_password_hash(settings.SUPERUSER_PASSWORD)
+        user = User(
+            username="admin",
+            hashed_password=hashed_password,
+            is_superuser=True,
+        )
+        session.add(user)
+        print("Użytkownik został załadowany.")
+
+    session.commit()
     print("Dane początkowe zostały załadowane.")
