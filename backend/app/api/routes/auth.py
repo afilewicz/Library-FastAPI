@@ -8,34 +8,33 @@ from app.core.security import (
     create_access_token,
 )
 from app.core.db import get_session
+from app.models import LoginRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=User)
 def register(
-    username: str,
-    password: str,
+    request: LoginRequest,
     session: Session = Depends(get_session),
 ):
-    if get_user_by_username(session, username):
+    if get_user_by_username(session, request.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered",
         )
-    hashed_password = get_password_hash(password)
-    return create_user(session, username, hashed_password)
+    hashed_password = get_password_hash(request.password)
+    return create_user(session, request.username, hashed_password)
 
 @router.post("/login")
 def login(
-    username: str,
-    password: str,
+    data: LoginRequest,  # Oczekuje danych w ciele żądania
     session: Session = Depends(get_session),
 ):
-    user = get_user_by_username(session, username)
-    if not user or not verify_password(password, user.hashed_password):
+    user = get_user_by_username(session, data.username)
+    if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.username, "user_id": user.id})
     return {"access_token": access_token, "token_type": "bearer"}

@@ -43,6 +43,10 @@ def get_loans(session: Session) -> list[Loan]:
     statement = select(Loan)
     return session.exec(statement).all()
 
+def get_loans_by_user_id(session: Session, user_id: int) -> list[Loan]:
+    statement = select(Loan).where(Loan.user_id == user_id)
+    return session.exec(statement).all()
+
 def get_loan(session: Session, loan_id: int) -> Loan:
     return session.get(Loan, loan_id)
 

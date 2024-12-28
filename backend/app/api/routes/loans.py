@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session
-from app.models import Loan
-from app.crud import create_loan, get_loans, get_loan, update_loan, delete_loan
+from sqlmodel import Session, select
+from app.models import Loan, Book, LoanResponse
+from app.crud import create_loan, get_loans, get_loan, update_loan, delete_loan, get_loans_by_user_id
 from app.core.db import get_session
+from app.core.auth import get_current_user, User
 
 router = APIRouter(prefix="/loans", tags=["loans"])
 
@@ -13,6 +14,36 @@ def create_loan_endpoint(loan: Loan, session: Session = Depends(get_session)):
 @router.get("/", response_model=list[Loan])
 def list_loans(session: Session = Depends(get_session)):
     return get_loans(session)
+
+@router.get("/my-loans", response_model=list[LoanResponse])
+def get_my_loans(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+
+    statement = select(Loan).where(Loan.user_id == current_user.id)
+    loans = session.exec(statement).all()
+
+    book_ids = [loan.book_id for loan in loans]
+    books = session.exec(select(Book).where(Book.id.in_(book_ids))).all()
+    book_map = {book.id: (book.title, book.author) for book in books}
+
+    user_map = {current_user.id: current_user.username}
+
+    enriched_loans = [
+        LoanResponse(
+            id=loan.id,
+            book_title=book_map.get(loan.book_id, ("Unknown", "Unknown"))[0],
+            book_author=book_map.get(loan.book_id, ("Unknown", "Unknown"))[1],
+            user_username=user_map.get(loan.user_id, "Unknown"),
+            loan_date=loan.loan_date,
+            return_date=loan.return_date,
+            status=loan.status,
+        )
+        for loan in loans
+    ]
+
+    return enriched_loans
 
 @router.get("/{loan_id}", response_model=Loan)
 def read_loan(loan_id: int, session: Session = Depends(get_session)):

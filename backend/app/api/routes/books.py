@@ -3,6 +3,8 @@ from sqlmodel import Session
 from app.models import Book
 from app.crud import create_book, get_books, get_book, update_book, delete_book
 from app.core.db import get_session
+from app.models import User
+from app.core.auth import get_current_user
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -11,7 +13,9 @@ def create_book_endpoint(book: Book, session: Session = Depends(get_session)):
     return create_book(session, book)
 
 @router.get("/", response_model=list[Book])
-def list_books(session: Session = Depends(get_session)):
+def list_books(session: Session = Depends(get_session),
+               current_user: User = Depends(get_current_user)):
+    print(current_user)
     return get_books(session)
 
 @router.get("/{book_id}", response_model=Book)

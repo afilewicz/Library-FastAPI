@@ -1,6 +1,7 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from "react";
-import { Container, Table, Spinner, Alert, Button} from "react-bootstrap";
+import { Container, Table, Spinner, Alert, Button } from "react-bootstrap";
+import axios from "axios";
 
 interface Book {
   id: number;
@@ -20,21 +21,57 @@ function BooksView() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/v1/books/");
-        if (!response.ok) {
-          throw new Error("Failed to fetch books");
-        }
-        const data = await response.json();
-        setBooks(data);
+        const token = localStorage.getItem("access_token");
+        const response = await axios.get("http://localhost:8000/api/v1/books/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setBooks(response.data);
         setLoading(false);
-      } catch (err) {
-        setError((err as Error).message);
+      } catch (err: any) {
+        setError(err.response?.data?.detail || "Failed to fetch books");
         setLoading(false);
       }
     };
 
     fetchBooks();
   }, []);
+
+  const reserveBook = async (id: number) => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const base64Url = token!.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(window.atob(base64));
+      const userId = payload.user_id;
+
+      const response = await axios.put(
+        `http://localhost:8000/api/v1/actions/reserve/${id}/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        const updatedBooks = books.map((book) => {
+          if (book.id === id) {
+            return { ...book, is_available: false };
+          }
+          return book;
+        });
+        setBooks(updatedBooks);
+      } else {
+        throw new Error("Failed to reserve book");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to reserve book");
+    }
+  };
 
   if (loading) {
     return (
@@ -54,29 +91,6 @@ function BooksView() {
     );
   }
 
-  const reserveBook = async (id: number) => {
-    try {
-      const response = await fetch(`http://localhost:8000/api/v1/actions/reserve/${id}/1`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to reserve book");
-      }
-      const updatedBooks = books.map((book) => {
-        if (book.id === id) {
-          return { ...book, is_available: false };
-        }
-        return book;
-      });
-      setBooks(updatedBooks);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }
-
   return (
     <Container className="mt-5">
       <Table striped bordered hover>
@@ -87,7 +101,7 @@ function BooksView() {
             <th>Wydawca</th>
             <th>Data wydania</th>
             <th>Cena</th>
-            <th/>
+            <th />
           </tr>
         </thead>
         <tbody>
@@ -99,10 +113,14 @@ function BooksView() {
               <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
               <td>{book.price.toFixed(2)} zł</td>
               <td className="text-center">
-                {book.is_available? (
-                    <Button className="btn btn-primary" onClick={() => reserveBook(book.id)}>Zarezerwuj</Button>
+                {book.is_available ? (
+                  <Button className="btn btn-primary" onClick={() => reserveBook(book.id)}>
+                    Zarezerwuj
+                  </Button>
                 ) : (
-                    <Button className="btn btn-secondary" disabled>Zarezerwuj</Button>
+                  <Button className="btn btn-secondary" disabled>
+                    Zarezerwuj
+                  </Button>
                 )}
               </td>
             </tr>

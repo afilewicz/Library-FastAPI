@@ -26,6 +26,10 @@ class User(SQLModel, table=True):
 
     loans: List["Loan"] = Relationship(back_populates="user")
 
+class LoginRequest(SQLModel):
+    username: str
+    password: str
+
 class LoanStatus(str, Enum):
     Returned = "Returned"
     Reserved = "Reserved"
@@ -41,3 +45,12 @@ class Loan(SQLModel, table=True):
 
     book: "Book" = Relationship(back_populates="loans")
     user: "User" = Relationship(back_populates="loans")
+
+class LoanResponse(SQLModel):
+    id: int
+    book_title: str
+    book_author: str
+    user_username: str
+    loan_date: Optional[datetime.date]
+    return_date: Optional[datetime.date]
+    status: LoanStatus
