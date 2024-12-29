@@ -1,14 +1,23 @@
 "use client";
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {Navbar, Container, Nav} from 'react-bootstrap';
 import LogoutButton from "@/components/LogoutButton";
 import {usePathname} from "next/navigation";
 
 
 function MyNavbar() {
+    const pathname = usePathname();
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-    const pathname = usePathname(); // Pobierz aktualną ścieżkę
+      useEffect(() => {
+        const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+        setIsLoggedIn(!!token);
+      }, [pathname]);
+
+    if (isLoggedIn === null) {
+        return null;
+    }
 
     return (
     <Navbar bg="light" expand="lg">
@@ -20,7 +29,7 @@ function MyNavbar() {
                 <Nav.Link href="/books">Książki</Nav.Link>
                 <Nav.Link href="/loans">Wypożyczenia</Nav.Link>
             </Nav>
-            {pathname !== "/login" && pathname !== "/register"  && <LogoutButton />}
+            {isLoggedIn && <LogoutButton />}
         </Navbar.Collapse>
       </Container>
     </Navbar>

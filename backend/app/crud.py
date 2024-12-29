@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from app.models import Book, Loan, LoanStatus, User
+import datetime
 
 def create_book(session: Session, book: Book) -> Book:
     session.add(book)
@@ -100,6 +101,17 @@ def add_loan_to_history(session: Session, book_id: int, loan_id: int) -> Book:
     session.commit()
     session.refresh(db_book)
     return db_book
+
+def edit_loan_dates(session: Session, loan_id: int, loan_date: datetime.date, return_date: datetime.date) -> Loan:
+    db_loan = session.get(Loan, loan_id)
+    if not db_loan:
+        return None
+    db_loan.loan_date = loan_date
+    db_loan.return_date = return_date
+    session.add(db_loan)
+    session.commit()
+    session.refresh(db_loan)
+    return db_loan
 
 def get_user_by_username(session: Session, username: str) -> User:
     statement = select(User).where(User.username == username)

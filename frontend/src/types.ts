@@ -7,3 +7,13 @@ export interface Book {
   author: string;
   date_of_publication: string;
 }
+
+export interface Loan {
+    id: number;
+    book_title: string;
+    book_author: string;
+    user_username: string;
+    loan_date: string;
+    return_date: string | null;
+    status: string;
+}

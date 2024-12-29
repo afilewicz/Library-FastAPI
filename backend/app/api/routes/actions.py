@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from datetime import datetime, timedelta, time
 from app.models import Book, Loan, LoanStatus
-from app.crud import create_loan, delete_loan, change_loan_status, change_book_availability, add_loan_to_history
+from app.crud import create_loan, delete_loan, change_loan_status, change_book_availability, add_loan_to_history, edit_loan_dates
 from app.core.db import get_session
 
 router = APIRouter(prefix="/actions", tags=["actions"])
@@ -30,6 +30,8 @@ def loan_book(loan_id: int, session: Session = Depends(get_session)) -> Loan:
         raise HTTPException(status_code=400, detail="Book is not reserved")
     change_loan_status(session, loan_id, LoanStatus.Loaned)
     add_loan_to_history(session, loan.book_id, loan_id)
+    return_date = datetime.combine(datetime.today() + timedelta(days=14), time.max)
+    edit_loan_dates(session, loan_id, datetime.today(), return_date)
     return loan
 
 @router.put("/return/{loan_id}", response_model=Loan)
@@ -41,6 +43,7 @@ def return_book(loan_id: int, session: Session = Depends(get_session)) -> Loan:
         raise HTTPException(status_code=400, detail="Book is not loaned")
     change_loan_status(session, loan_id, LoanStatus.Returned)
     change_book_availability(session, loan.book_id, True)
+    edit_loan_dates(session, loan_id, loan.loan_date, datetime.today())
     return loan
 
 @router.delete("/cancel_loan/{loan_id}")

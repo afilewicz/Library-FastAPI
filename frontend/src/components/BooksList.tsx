@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Container, Table, Spinner, Alert, Button } from "react-bootstrap";
 import axios from "axios";
-import {router} from "next/client";
 import { isUserAdmin } from "@/utils/authUtils";
 import EditBookModal from "@/components/EditBookModal";
 import { Book } from "@/types";
@@ -19,10 +18,6 @@ function BooksList() {
     const fetchBooks = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        if (!token) {
-          await router.push("/login");
-          return;
-        }
 
         const response = await axios.get("http://localhost:8000/api/v1/books/", {
           headers: {
@@ -38,7 +33,7 @@ function BooksList() {
     };
 
     fetchBooks().catch(console.error);
-  }, [router]);
+  }, []);
 
   const reserveBook = async (id: number) => {
     try {
@@ -189,9 +184,9 @@ function BooksList() {
       <Container className="mt-3">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h1>Książki</h1>
-          <Button variant="success" onClick={() => setShowAddModal(true)}>
+          {isUserAdmin() && <Button variant="success" onClick={() => setShowAddModal(true)}>
             Dodaj książkę
-          </Button>
+          </Button>}
         </div>
         <Table striped bordered hover>
           <thead>
@@ -213,11 +208,8 @@ function BooksList() {
                 <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
                 <td>{book.price.toFixed(2)} zł</td>
                 <td className="text-center">
-                  {isUserAdmin() ? (
-                      adminControls(book)
-                  ) : (
-                      userControls(book)
-                  )}
+                  {isUserAdmin() && adminControls(book)}
+                  {!isUserAdmin() && userControls(book)}
                 </td>
               </tr>
           ))}
