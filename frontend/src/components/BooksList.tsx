@@ -1,47 +1,48 @@
-"use client";
 import React, { useState, useEffect } from "react";
 import { Container, Table, Spinner, Alert, Button } from "react-bootstrap";
 import axios from "axios";
+import {router} from "next/client";
+import { isUserAdmin } from "@/utils/authUtils";
+import EditBookModal from "@/components/EditBookModal";
+import { Book } from "@/types";
+import AddBookModal from "@/components/AddBookModal";
 
-interface Book {
-  id: number;
-  publisher: string;
-  price: number;
-  is_available: boolean;
-  title: string;
-  author: string;
-  date_of_publication: string;
-}
-
-function BooksView() {
+function BooksList() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
         const token = localStorage.getItem("access_token");
+        if (!token) {
+          await router.push("/login");
+          return;
+        }
+
         const response = await axios.get("http://localhost:8000/api/v1/books/", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         setBooks(response.data);
-        setLoading(false);
       } catch (err: any) {
         setError(err.response?.data?.detail || "Failed to fetch books");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchBooks();
-  }, []);
+    fetchBooks().catch(console.error);
+  }, [router]);
 
   const reserveBook = async (id: number) => {
     try {
       const token = localStorage.getItem("access_token");
-
       const base64Url = token!.split(".")[1];
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(window.atob(base64));
@@ -66,12 +67,77 @@ function BooksView() {
         });
         setBooks(updatedBooks);
       } else {
-        throw new Error("Failed to reserve book");
+        setError("Failed to reserve book");
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to reserve book");
     }
   };
+
+  const handleDelete = async (bookId: number) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      await axios.delete(`http://localhost:8000/api/v1/books/${bookId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setBooks((prevBooks) => prevBooks.filter((book) => book.id !== bookId));
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to delete book");
+    }
+  };
+
+  const handleAddBook = async (newBook: Book) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      const response = await axios.post(
+        "http://localhost:8000/api/v1/books/",
+        {
+          ...newBook,
+          date_of_publication: new Date(newBook.date_of_publication).toISOString().split("T")[0],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setBooks([...books, response.data]);
+      setShowAddModal(false);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to add book");
+    }
+  };
+
+  const handleEditSave = async (updatedBook: Book) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    await axios.put(
+      `http://localhost:8000/api/v1/books/${updatedBook.id}`,
+      updatedBook,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    setBooks((prevBooks) =>
+      prevBooks.map((book) =>
+        book.id === updatedBook.id ? { ...updatedBook } : book
+      )
+    );
+    setShowEditModal(false);
+    setSelectedBook(null);
+  } catch (err: any) {
+    setError(err.response?.data?.detail || "Failed to update book");
+  }
+};
 
   if (loading) {
     return (
@@ -86,49 +152,90 @@ function BooksView() {
   if (error) {
     return (
       <Container className="mt-5">
-        <Alert variant="danger">Error: {error}</Alert>
+        <Alert variant="danger">{error}</Alert>
       </Container>
     );
   }
 
+  const adminControls = (book: Book) => (
+    <>
+      <Button
+        className="btn btn-warning me-2"
+        onClick={() => {
+          setSelectedBook(book);
+          setShowEditModal(true);
+        }}
+      >
+        Edytuj
+      </Button>
+      <Button className="btn btn-danger" onClick={() => handleDelete(book.id)}>
+        Usuń
+      </Button>
+    </>
+  );
+
+  const userControls = (book: Book) => (
+    book.is_available ? (
+      <Button className="btn btn-primary" onClick={() => reserveBook(book.id)}>
+        Zarezerwuj
+      </Button>
+    ) : (
+      <Button className="btn btn-secondary" disabled>
+        Zarezerwuj
+      </Button>)
+  );
+
   return (
-    <Container className="mt-5">
-      <Table striped bordered hover>
-        <thead>
+      <Container className="mt-3">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1>Książki</h1>
+          <Button variant="success" onClick={() => setShowAddModal(true)}>
+            Dodaj książkę
+          </Button>
+        </div>
+        <Table striped bordered hover>
+          <thead>
           <tr>
             <th>Tytuł</th>
             <th>Autor</th>
             <th>Wydawca</th>
             <th>Data wydania</th>
             <th>Cena</th>
-            <th />
+            <th/>
           </tr>
-        </thead>
-        <tbody>
+          </thead>
+          <tbody>
           {books.map((book) => (
-            <tr key={book.id}>
-              <td>{book.title}</td>
-              <td>{book.author}</td>
-              <td>{book.publisher}</td>
-              <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
-              <td>{book.price.toFixed(2)} zł</td>
-              <td className="text-center">
-                {book.is_available ? (
-                  <Button className="btn btn-primary" onClick={() => reserveBook(book.id)}>
-                    Zarezerwuj
-                  </Button>
-                ) : (
-                  <Button className="btn btn-secondary" disabled>
-                    Zarezerwuj
-                  </Button>
-                )}
-              </td>
-            </tr>
+              <tr key={book.id}>
+                <td>{book.title}</td>
+                <td>{book.author}</td>
+                <td>{book.publisher}</td>
+                <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
+                <td>{book.price.toFixed(2)} zł</td>
+                <td className="text-center">
+                  {isUserAdmin() ? (
+                      adminControls(book)
+                  ) : (
+                      userControls(book)
+                  )}
+                </td>
+              </tr>
           ))}
-        </tbody>
-      </Table>
-    </Container>
+          </tbody>
+        </Table>
+        <EditBookModal
+            show={showEditModal}
+            book={selectedBook}
+            onHide={() => setShowEditModal(false)}
+            onSave={handleEditSave}
+        />
+        <AddBookModal
+            show={showAddModal}
+            onCloseAction={() => setShowAddModal(false)}
+            onAddAction={handleAddBook}
+        />
+      </Container>
   );
 }
 
-export default BooksView;
+export default BooksList;

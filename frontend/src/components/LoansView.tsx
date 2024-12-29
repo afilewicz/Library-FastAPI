@@ -34,14 +34,14 @@ export default function LoansView() {
           },
         });
         setLoans(response.data);
-        setLoading(false);
       } catch (err) {
         setError("Nie udało się załadować listy wypożyczeń");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchLoans();
+    fetchLoans().catch(console.error);
   }, [router]);
 
   if (loading) {

@@ -27,7 +27,7 @@ def register(
 
 @router.post("/login")
 def login(
-    data: LoginRequest,  # Oczekuje danych w ciele żądania
+    data: LoginRequest,
     session: Session = Depends(get_session),
 ):
     user = get_user_by_username(session, data.username)
@@ -36,5 +36,6 @@ def login(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(data={"sub": user.username, "user_id": user.id})
+    access_token = create_access_token(data={"sub": user.username, "user_id": user.id, "is_superuser": user.is_superuser})
+    print(access_token)
     return {"access_token": access_token, "token_type": "bearer"}
