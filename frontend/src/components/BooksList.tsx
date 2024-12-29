@@ -79,7 +79,7 @@ function BooksList() {
       });
       setBooks((prevBooks) => prevBooks.filter((book) => book.id !== bookId));
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to delete book");
+      setError(err.response?.data?.detail || "Nie udało się usunąć książki");
     }
   };
 
@@ -105,7 +105,7 @@ function BooksList() {
       setBooks([...books, response.data]);
       setShowAddModal(false);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to add book");
+      setError(err.response?.data?.detail || "Nie udało się dodać książki");
     }
   };
 
@@ -130,7 +130,7 @@ function BooksList() {
     setShowEditModal(false);
     setSelectedBook(null);
   } catch (err: any) {
-    setError(err.response?.data?.detail || "Failed to update book");
+    setError(err.response?.data?.detail || "Nie udało się zaktualizować książki");
   }
 };
 

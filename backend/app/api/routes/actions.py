@@ -2,7 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from datetime import datetime, timedelta, time
 from app.models import Book, Loan, LoanStatus
-from app.crud import create_loan, delete_loan, change_loan_status, change_book_availability, add_loan_to_history, edit_loan_dates
+from app.crud import (create_loan,
+                      delete_loan,
+                      change_loan_status,
+                      change_book_availability,
+                      add_loan_to_history,
+                      edit_loan_dates,
+                      add_loan_to_user,
+                      remove_loan_from_user)
 from app.core.db import get_session
 
 router = APIRouter(prefix="/actions", tags=["actions"])
@@ -19,6 +26,7 @@ def reserve_book(book_id: int, user_id: int, session: Session = Depends(get_sess
         status = LoanStatus.Reserved
     ))
     change_book_availability(session, book_id, False)
+    add_loan_to_user(session, loan.user_id, loan_id)
     return loan
 
 @router.put("/loan_book/{loan_id}", response_model=Loan)
@@ -44,6 +52,7 @@ def return_book(loan_id: int, session: Session = Depends(get_session)) -> Loan:
     change_loan_status(session, loan_id, LoanStatus.Returned)
     change_book_availability(session, loan.book_id, True)
     edit_loan_dates(session, loan_id, loan.loan_date, datetime.today())
+    remove_loan_from_user(session, loan.user_id, loan_id)
     return loan
 
 @router.delete("/cancel_loan/{loan_id}")
@@ -55,4 +64,5 @@ def cancel_loan(loan_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=400, detail="Only loans with status 'Reserved' can be canceled")
     delete_loan(session, loan_id)
     change_book_availability(session, loan.book_id, True)
+    remove_loan_from_user(session, loan.user_id, loan_id)
     return {"message": "Loan cancelled successfully"}

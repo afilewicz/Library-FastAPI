@@ -4,6 +4,7 @@ import {Container, Table, Spinner, Alert, Button} from "react-bootstrap";
 import axios from "axios";
 import { Loan } from "@/types";
 import { isUserAdmin } from "@/utils/authUtils";
+import { translateStatus } from "@/utils/statusTranslations";
 
 
 export default function LoansView() {
@@ -113,7 +114,7 @@ export default function LoansView() {
             <th>Autor</th>
             {isUserAdmin() && <th>Użytkownik</th>}
             <th>Data Wypożyczenia</th>
-            <th>Data Zwrotu</th>
+            <th>Data Zakończenia</th>
             <th>Status</th>
             {isUserAdmin() && <th> Akcje </th>}
           </tr>
@@ -130,7 +131,7 @@ export default function LoansView() {
                     <td />
                 )}
                 <td>{loan.return_date ? new Date(loan.return_date).toLocaleDateString() : "N/A"}</td>
-                <td>{loan.status}</td>
+                <td>{translateStatus(loan.status)}</td>
                 {isUserAdmin() && (
                   <td className="text-center">
                     {loan.status === "Reserved" && (

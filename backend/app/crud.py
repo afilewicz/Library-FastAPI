@@ -102,6 +102,26 @@ def add_loan_to_history(session: Session, book_id: int, loan_id: int) -> Book:
     session.refresh(db_book)
     return db_book
 
+def add_loan_to_user(session: Session, user_id: int, loan_id: int) -> User:
+    db_user = session.get(User, user_id)
+    if not db_user:
+        return None
+    db_user.user_loans = db_user.user_loans + [loan_id]
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return db_user
+
+def remove_loan_from_user(session: Session, user_id: int, loan_id: int) -> User:
+    db_user = session.get(User, user_id)
+    if not db_user:
+        return None
+    db_user.user_loans = [loan for loan in db_user.user_loans if loan != loan_id]
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return db_user
+
 def edit_loan_dates(session: Session, loan_id: int, loan_date: datetime.date, return_date: datetime.date) -> Loan:
     db_loan = session.get(Loan, loan_id)
     if not db_loan:
