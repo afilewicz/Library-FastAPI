@@ -14,6 +14,7 @@ class Book(SQLModel, table=True):
     price: float
     history_of_leases: Optional[List[int]] = Field(default=[], sa_column=Column(ARRAY(Integer)))
     is_available: bool = True
+    is_permanently_unavailable: bool = False
 
     loans: List["Loan"] = Relationship(back_populates="book")
 

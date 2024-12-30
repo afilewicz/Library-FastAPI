@@ -91,7 +91,8 @@ export default function LoansView() {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
-          throw new Error("Użytkownik nie jest zalogowany");
+          setError("Użytkownik nie jest zalogowany");
+          return;
         }
         await axios.delete("http://localhost:8000/api/v1/users/me", {
           headers: {
@@ -109,7 +110,10 @@ export default function LoansView() {
   const cancelReservation = async (loanId: number) => {
     try {
       const token = localStorage.getItem("access_token");
-      if (!token) throw new Error("Użytkownik nie jest zalogowany");
+      if (!token) {
+        setError("Użytkownik nie jest zalogowany");
+        return;
+      }
 
       await axios.delete(`http://localhost:8000/api/v1/actions/cancel_loan/${loanId}`, {
         headers: {

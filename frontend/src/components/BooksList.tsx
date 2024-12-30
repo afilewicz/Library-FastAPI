@@ -28,6 +28,7 @@ function BooksList() {
           },
         });
         setBooks(response.data);
+        console.log(response.data);
       } catch (err: any) {
         setError(err.response?.data?.detail || "Failed to fetch books");
       } finally {
@@ -75,14 +76,26 @@ function BooksList() {
   const handleDelete = async (bookId: number) => {
     try {
       const token = localStorage.getItem("access_token");
-      await axios.delete(`http://localhost:8000/api/v1/books/${bookId}`, {
+      const response = await axios.delete(`http://localhost:8000/api/v1/books/${bookId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setBooks((prevBooks) => prevBooks.filter((book) => book.id !== bookId));
+      const { message } = response.data;
+
+      if (message === "permanently unavailable") {
+        setBooks((prevBooks) =>
+          prevBooks.map((book) =>
+            book.id === bookId ? { ...book, is_available: false, is_permanently_unavailable: true } : book
+          )
+        );
+        alert("Książka została oznaczona jako trwale niedostępna");
+      } else if (message === "deleted successfully") {
+        setBooks((prevBooks) => prevBooks.filter((book) => book.id !== bookId));
+        alert("Książka została usunięta");
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Nie udało się usunąć książki");
+      alert("Nie udało się usunąć książki");
     }
   };
 
@@ -142,7 +155,8 @@ function BooksList() {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
-          throw new Error("Użytkownik nie jest zalogowany");
+          setError("Użytkownik nie jest zalogowany");
+          return;
         }
         await axios.delete("http://localhost:8000/api/v1/users/me", {
           headers: {
@@ -158,10 +172,21 @@ function BooksList() {
   };
 
   const filteredBooks = books.filter(
-    (book) =>
-      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.publisher.toLowerCase().includes(searchTerm.toLowerCase())
+    (book) => {
+      const matchesSearchTerm =
+        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.publisher.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (isUserAdmin()) {
+        return (
+            matchesSearchTerm
+            );
+      } else {
+        return (
+        !book.is_permanently_unavailable && matchesSearchTerm);
+      }
+    }
   );
 
 
@@ -239,6 +264,7 @@ function BooksList() {
               <th>Wydawca</th>
               <th>Data wydania</th>
               <th>Cena</th>
+              <th>Dostępna</th>
               <th/>
             </tr>
             </thead>
@@ -250,8 +276,13 @@ function BooksList() {
                   <td>{book.publisher}</td>
                   <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
                   <td>{book.price.toFixed(2)} zł</td>
+                  {isUserAdmin() && (
+                  <td>
+                    {book.is_permanently_unavailable ? "Niedostępna" : "Dostępna"}
+                  </td>
+                  )}
                   <td className="text-center">
-                    {isUserAdmin() && adminControls(book)}
+                    {isUserAdmin() && !book.is_permanently_unavailable && adminControls(book)}
                     {!isUserAdmin() && userControls(book)}
                   </td>
                 </tr>

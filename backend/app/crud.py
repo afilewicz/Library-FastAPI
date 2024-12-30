@@ -27,13 +27,20 @@ def update_book(session: Session, book_id: int, updated_book: Book) -> Book:
     session.refresh(db_book)
     return db_book
 
-def delete_book(session: Session, book_id: int) -> bool:
+def delete_book(session: Session, book_id: int) -> str:
     db_book = session.get(Book, book_id)
     if not db_book:
-        return False
-    session.delete(db_book)
-    session.commit()
-    return True
+        raise HTTPException(status_code=404, detail="Book not found")
+    if db_book.history_of_leases:
+        db_book.is_permanently_unavailable = True
+        db_book.is_available = False
+        session.add(db_book)
+        session.commit()
+        return "permanently unavailable"
+    else:
+        session.delete(db_book)
+        session.commit()
+        return "deleted successfully"
 
 def create_loan(session: Session, loan: Loan) -> Loan:
     session.add(loan)

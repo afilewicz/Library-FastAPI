@@ -6,6 +6,7 @@ export interface Book {
   title: string;
   author: string;
   date_of_publication: string;
+  is_permanently_unavailable: boolean;
 }
 
 export interface Loan {

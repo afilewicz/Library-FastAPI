@@ -34,7 +34,5 @@ def update_book_endpoint(book_id: int, updated_book: Book, session: Session = De
 
 @router.delete("/{book_id}")
 def delete_book_endpoint(book_id: int, session: Session = Depends(get_session)):
-    success = delete_book(session, book_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Book not found")
-    return {"message": "Book deleted successfully"}
+    message = delete_book(session, book_id)
+    return {"message": message}
