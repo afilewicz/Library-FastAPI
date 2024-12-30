@@ -5,6 +5,7 @@ import { isUserAdmin } from "@/utils/authUtils";
 import EditBookModal from "@/components/EditBookModal";
 import { Book } from "@/types";
 import AddBookModal from "@/components/AddBookModal";
+import {useRouter} from "next/navigation";
 
 function BooksList() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -13,6 +14,7 @@ function BooksList() {
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -42,6 +44,7 @@ function BooksList() {
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(window.atob(base64));
       const userId = payload.user_id;
+      const router = useRouter();
 
       const response = await axios.put(
         `http://localhost:8000/api/v1/actions/reserve/${id}/${userId}`,
@@ -110,29 +113,49 @@ function BooksList() {
   };
 
   const handleEditSave = async (updatedBook: Book) => {
-  try {
-    const token = localStorage.getItem("access_token");
-    await axios.put(
-      `http://localhost:8000/api/v1/books/${updatedBook.id}`,
-      updatedBook,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+    try {
+      const token = localStorage.getItem("access_token");
+      await axios.put(
+        `http://localhost:8000/api/v1/books/${updatedBook.id}`,
+        updatedBook,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setBooks((prevBooks) =>
+        prevBooks.map((book) =>
+          book.id === updatedBook.id ? { ...updatedBook } : book
+        )
+      );
+      setShowEditModal(false);
+      setSelectedBook(null);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Nie udało się zaktualizować książki");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (window.confirm("Czy na pewno chcesz usunąć swoje konto?")) {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("Użytkownik nie jest zalogowany");
+        }
+        await axios.delete("http://localhost:8000/api/v1/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        localStorage.removeItem("access_token");
+        router.push("/login");
+      } catch (error: any) {
+        setError(error.response?.data?.detail || "Nie udało się usunąć konta.");
       }
-    );
-    setBooks((prevBooks) =>
-      prevBooks.map((book) =>
-        book.id === updatedBook.id ? { ...updatedBook } : book
-      )
-    );
-    setShowEditModal(false);
-    setSelectedBook(null);
-  } catch (err: any) {
-    setError(err.response?.data?.detail || "Nie udało się zaktualizować książki");
-  }
-};
+    }
+  };
 
   if (loading) {
     return (
@@ -186,6 +209,9 @@ function BooksList() {
           <h1>Książki</h1>
           {isUserAdmin() && <Button variant="success" onClick={() => setShowAddModal(true)}>
             Dodaj książkę
+          </Button>}
+          {!isUserAdmin() && <Button variant="danger" onClick={handleDeleteUser}>
+              Usuń konto
           </Button>}
         </div>
         <Table striped bordered hover>

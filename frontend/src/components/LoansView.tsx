@@ -5,12 +5,14 @@ import axios from "axios";
 import { Loan } from "@/types";
 import { isUserAdmin } from "@/utils/authUtils";
 import { translateStatus } from "@/utils/statusTranslations";
+import {useRouter} from "next/navigation";
 
 
 export default function LoansView() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchLoans = async () => {
@@ -49,7 +51,7 @@ export default function LoansView() {
       );
       setLoans((prevLoans) =>
       prevLoans.map((loan) =>
-         loan.id === loanId
+        loan.id === loanId
       ? { ...loan, status: response.data.status, loan_date: response.data.loan_date, return_date: response.data.return_date }
       : loan
       )
@@ -60,29 +62,49 @@ export default function LoansView() {
   };
 
   const handleReturnBook = async (loanId: number) => {
-    try {
-      const token = localStorage.getItem("access_token");
-      const response = await axios.put(
-        `http://localhost:8000/api/v1/actions/return/${loanId}`,
-        {},
-        {
+      try {
+        const token = localStorage.getItem("access_token");
+        const response = await axios.put(
+          `http://localhost:8000/api/v1/actions/return/${loanId}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log(response.data);
+        setLoans((prevLoans) =>
+        prevLoans.map((loan) =>
+          loan.id === loanId
+        ? { ...loan, status: response.data.status, loan_date: response.data.loan_date, return_date: response.data.return_date }
+        : loan
+        )
+        );
+      } catch (err) {
+        setError("Nie udało się zwrócić książki");
+      }
+    };
+
+  const handleDeleteUser = async () => {
+    if (window.confirm("Czy na pewno chcesz usunąć swoje konto?")) {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("Użytkownik nie jest zalogowany");
+        }
+        await axios.delete("http://localhost:8000/api/v1/users/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
-      setLoans((prevLoans) =>
-      prevLoans.map((loan) =>
-        loan.id === loanId
-      ? { ...loan, status: response.data.status, loan_date: response.data.loan_date, return_date: response.data.return_date }
-      : loan
-      )
-      );
-    } catch (err) {
-      setError("Nie udało się zwrócić książki");
+        });
+        localStorage.removeItem("access_token");
+        router.push("/login");
+      } catch (error: any) {
+        setError(error.response?.data?.detail || "Nie udało się usunąć konta.");
+      }
     }
   };
-
 
   if (loading) {
     return (
@@ -106,6 +128,9 @@ export default function LoansView() {
       <Container className="mt-3">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h1>{isUserAdmin() ? "Wypożyczenia użytkowników" : "Moje Wypożyczenia"}</h1>
+          {!isUserAdmin() && <Button variant="danger" onClick={handleDeleteUser}>
+              Usuń konto
+          </Button>}
         </div>
         <Table striped bordered hover>
           <thead>

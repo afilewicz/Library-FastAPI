@@ -29,7 +29,7 @@ export default function BooksPage() {
 
   return (
     <div>
-      <BooksView />
+      <BooksView/>
     </div>
   );
 }

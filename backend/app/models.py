@@ -24,7 +24,7 @@ class User(SQLModel, table=True):
     is_superuser: bool = False
     user_loans: Optional[List[int]] = Field(default=[], sa_column=Column(ARRAY(Integer)))
 
-    loans: List["Loan"] = Relationship(back_populates="user")
+    loans: List["Loan"] = Relationship(back_populates="user", cascade_delete=True)
 
 class LoginRequest(SQLModel):
     username: str

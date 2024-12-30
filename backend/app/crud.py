@@ -117,9 +117,7 @@ def remove_loan_from_user(session: Session, user_id: int, loan_id: int) -> User:
     if not db_user:
         return None
     db_user.user_loans = [loan for loan in db_user.user_loans if loan != loan_id]
-    session.add(db_user)
     session.commit()
-    session.refresh(db_user)
     return db_user
 
 def edit_loan_dates(session: Session, loan_id: int, loan_date: datetime.date, return_date: datetime.date) -> Loan:
@@ -143,3 +141,18 @@ def create_user(session: Session, username: str, hashed_password: str) -> User:
     session.commit()
     session.refresh(user)
     return user
+
+def delete_user(session: Session, user_id: int) -> bool:
+    user = session.get(User, user_id)
+    if not user:
+        return False
+    active_loans = session.exec(
+        select(Loan)
+        .where(Loan.user_id == user_id)
+        .where(Loan.status != LoanStatus.Returned)
+    ).all()
+    if active_loans:
+        raise HTTPException(status_code=400, detail="Cannot delete user with active loans")
+    session.delete(user)
+    session.commit()
+    return True

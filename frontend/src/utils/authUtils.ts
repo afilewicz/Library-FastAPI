@@ -11,5 +11,5 @@ export function isUserAdmin(): boolean {
 
 export function isUserLoggedIn(): boolean {
   const token = localStorage.getItem("access_token");
-  return !!token; // Zwraca `true` jeśli token istnieje, `false` w przeciwnym razie
+  return !!token;
 }
