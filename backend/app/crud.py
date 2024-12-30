@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
 from app.models import Book, Loan, LoanStatus, User
 import datetime
+from fastapi import HTTPException
 
 def create_book(session: Session, book: Book) -> Book:
     session.add(book)
@@ -152,7 +153,7 @@ def delete_user(session: Session, user_id: int) -> bool:
         .where(Loan.status != LoanStatus.Returned)
     ).all()
     if active_loans:
-        raise HTTPException(status_code=400, detail="Cannot delete user with active loans")
+        raise HTTPException(status_code=400, detail="Nie można usunąć użytkownika z aktywnymi wypożyczeniami")
     session.delete(user)
     session.commit()
     return True

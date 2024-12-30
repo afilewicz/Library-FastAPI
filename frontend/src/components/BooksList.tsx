@@ -14,6 +14,7 @@ function BooksList() {
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const router = useRouter();
 
   useEffect(() => {
@@ -44,7 +45,6 @@ function BooksList() {
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(window.atob(base64));
       const userId = payload.user_id;
-      const router = useRouter();
 
       const response = await axios.put(
         `http://localhost:8000/api/v1/actions/reserve/${id}/${userId}`,
@@ -157,6 +157,14 @@ function BooksList() {
     }
   };
 
+  const filteredBooks = books.filter(
+    (book) =>
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.publisher.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+
   if (loading) {
     return (
       <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
@@ -205,55 +213,64 @@ function BooksList() {
 
   return (
       <Container className="mt-3">
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
           <h1>Książki</h1>
           {isUserAdmin() && <Button variant="success" onClick={() => setShowAddModal(true)}>
             Dodaj książkę
           </Button>}
           {!isUserAdmin() && <Button variant="danger" onClick={handleDeleteUser}>
-              Usuń konto
+            Usuń konto
           </Button>}
         </div>
-        <Table striped bordered hover>
-          <thead>
-          <tr>
-            <th>Tytuł</th>
-            <th>Autor</th>
-            <th>Wydawca</th>
-            <th>Data wydania</th>
-            <th>Cena</th>
-            <th/>
-          </tr>
-          </thead>
-          <tbody>
-          {books.map((book) => (
-              <tr key={book.id}>
-                <td>{book.title}</td>
-                <td>{book.author}</td>
-                <td>{book.publisher}</td>
-                <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
-                <td>{book.price.toFixed(2)} zł</td>
-                <td className="text-center">
-                  {isUserAdmin() && adminControls(book)}
-                  {!isUserAdmin() && userControls(book)}
-                </td>
-              </tr>
-          ))}
-          </tbody>
-        </Table>
-        <EditBookModal
-            show={showEditModal}
-            book={selectedBook}
-            onHide={() => setShowEditModal(false)}
-            onSave={handleEditSave}
-        />
-        <AddBookModal
-            show={showAddModal}
-            onCloseAction={() => setShowAddModal(false)}
-            onAddAction={handleAddBook}
-        />
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <input
+              type="text"
+              placeholder="Wyszukaj książki..."
+              className="form-control w-100"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+          <Table striped bordered hover>
+            <thead>
+            <tr>
+              <th>Tytuł</th>
+              <th>Autor</th>
+              <th>Wydawca</th>
+              <th>Data wydania</th>
+              <th>Cena</th>
+              <th/>
+            </tr>
+            </thead>
+            <tbody>
+            {filteredBooks.map((book) => (
+                <tr key={book.id}>
+                  <td>{book.title}</td>
+                  <td>{book.author}</td>
+                  <td>{book.publisher}</td>
+                  <td>{new Date(book.date_of_publication).toLocaleDateString()}</td>
+                  <td>{book.price.toFixed(2)} zł</td>
+                  <td className="text-center">
+                    {isUserAdmin() && adminControls(book)}
+                    {!isUserAdmin() && userControls(book)}
+                  </td>
+                </tr>
+            ))}
+            </tbody>
+          </Table>
+          <EditBookModal
+              show={showEditModal}
+              book={selectedBook}
+              onHide={() => setShowEditModal(false)}
+              onSave={handleEditSave}
+          />
+          <AddBookModal
+              show={showAddModal}
+              onCloseAction={() => setShowAddModal(false)}
+              onAddAction={handleAddBook}
+          />
       </Container>
-  );
+);
 }
 
 export default BooksList;
