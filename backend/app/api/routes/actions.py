@@ -50,14 +50,10 @@ def return_book(loan_id: int, session: Session = Depends(get_session)) -> Loan:
     if loan.status != LoanStatus.Loaned:
         raise HTTPException(status_code=400, detail="Book is not loaned")
     change_loan_status(session, loan_id, LoanStatus.Returned)
-    print(f"This is loan 0: {loan}")
     change_book_availability(session, loan.book_id, True)
-    print(f"This is loan 1: {loan}")
     edit_loan_dates(session, loan_id, loan.loan_date, datetime.today())
-    print(f"This is loan 2: {loan}")
     remove_loan_from_user(session, loan.user_id, loan_id)
     session.get(Loan, loan_id)
-    print(f"This is loan 3: {loan}")
     return loan
 
 @router.delete("/cancel_loan/{loan_id}")

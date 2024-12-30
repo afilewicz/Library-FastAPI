@@ -106,6 +106,28 @@ export default function LoansView() {
     }
   };
 
+  const cancelReservation = async (loanId: number) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) throw new Error("Użytkownik nie jest zalogowany");
+
+      await axios.delete(`http://localhost:8000/api/v1/actions/cancel_loan/${loanId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setLoans((prevLoans) =>
+        prevLoans.filter((loan) => loan.id !== loanId)
+      );
+
+      alert("Rezerwacja została anulowana");
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Nie udało się anulować rezerwacji");
+    }
+  };
+
+
   if (loading) {
     return (
       <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
@@ -176,9 +198,19 @@ export default function LoansView() {
                         </Button>
                     )}
                   </td>
+                )}
+                {!isUserAdmin() && loan.status === "Reserved" && (
+                    <td className="text-center">
+                      <Button
+                          className="btn btn-danger"
+                          onClick={() => cancelReservation(loan.id)}
+                      >
+                        Anuluj rezerwację
+                      </Button>
+                    </td>
                     )}
                   </tr>
-                  ))}
+              ))}
           </tbody>
         </Table>
       </Container>
