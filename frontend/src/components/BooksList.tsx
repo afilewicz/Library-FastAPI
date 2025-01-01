@@ -264,7 +264,7 @@ function BooksList() {
               <th>Wydawca</th>
               <th>Data wydania</th>
               <th>Cena</th>
-              <th>Dostępna</th>
+              {isUserAdmin() && <th>Dostępna</th>}
               <th/>
             </tr>
             </thead>
