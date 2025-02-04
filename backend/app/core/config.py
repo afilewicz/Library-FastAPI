@@ -24,7 +24,7 @@ class Settings(BaseSettings):
         arbitrary_types_allowed=True
     )
     PROJECT_NAME: str
-    FRONTEND_HOST: str = "http://localhost:5173"
+    FRONTEND_HOST: str = "http://localhost:3000"
 
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
@@ -45,5 +45,9 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
+
+    SECRET_KEY: str
+
+    SUPERUSER_PASSWORD: str
 
 settings = Settings()

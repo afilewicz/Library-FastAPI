@@ -7,5 +7,7 @@ node_modules/
 /playwright/.cache/
 /vroom/data
 /vroom/vroom-conf/access.log
-
+/frontend/.next/
+/frontend/package-lock.json
+.env
 /venv/

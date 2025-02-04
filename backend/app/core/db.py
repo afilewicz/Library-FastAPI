@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, create_engine, Session
+from app.core.initial_data import load_initial_data
 from app.core.config import settings
 
 DATABASE_URL = (
@@ -10,6 +11,8 @@ engine = create_engine(DATABASE_URL, echo=True)  # `echo=True` loguje zapytania 
 
 def init_db():
     SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        load_initial_data(session)
 
 def get_session():
     with Session(engine) as session:
